@@ -425,23 +425,25 @@ function seed(){
     v:1,
     device:"PC-"+Math.random().toString(36).slice(2,6).toUpperCase(),
     settings:{theme:"auto",sound:true,sb:{url:"",key:"",room:""}},
+    /* Seed-IDs sind DETERMINISTISCH: gleiche IDs auf jedem Gerät,
+       damit der Sync-Merge frisch geseedete Geräte dedupliziert. */
     templates:[
-      {id:uid(),title:"office@ Postfach triagieren",detail:"Neue Mails sichten, Dringendes flaggen",cat:"outlook",time:"08:00",days:[1,2,3,4,5],active:true,t},
-      {id:uid(),title:"NH5 Pipeline & Lagerkapazität checken",detail:"Punkte-Stand, Engpässe, Wareneingang heute",cat:"nh5",time:"08:30",days:[1,2,3,4,5],active:true,t},
-      {id:uid(),title:"Odoo: WE-Lots & Aufträge prüfen",detail:"Neue Lots, hängende Aufträge",cat:"odoo",time:"09:00",days:[1,2,3,4,5],active:true,t},
-      {id:uid(),title:"Otto-Obligo / Zahlungsplan-Blick",detail:"Saldo vs. 500k-Limit, Fälligkeiten der Woche",cat:"fin",time:"10:30",days:[1,3,5],active:true,t},
-      {id:uid(),title:"Kreditoren: Fälligkeiten freigeben",detail:"Agicap-Abgleich, überfällige Posten",cat:"fin",time:"11:30",days:[2,4],active:true,t},
-      {id:uid(),title:"re@ Rechnungen (AMM) sichten",detail:"Frachtkosten-Mails zuordnen",cat:"log",time:"14:00",days:[1,2,3,4,5],active:true,t},
-      {id:uid(),title:"Tagesabschluss: morgen planen",detail:"Offenes verschieben, Prioritäten setzen",cat:"allg",time:"16:30",days:[1,2,3,4,5],active:true,t}
+      {id:"seed-office",title:"office@ Postfach triagieren",detail:"Neue Mails sichten, Dringendes flaggen",cat:"outlook",time:"08:00",days:[1,2,3,4,5],active:true,t},
+      {id:"seed-nh5",title:"NH5 Pipeline & Lagerkapazität checken",detail:"Punkte-Stand, Engpässe, Wareneingang heute",cat:"nh5",time:"08:30",days:[1,2,3,4,5],active:true,t},
+      {id:"seed-odoo",title:"Odoo: WE-Lots & Aufträge prüfen",detail:"Neue Lots, hängende Aufträge",cat:"odoo",time:"09:00",days:[1,2,3,4,5],active:true,t},
+      {id:"seed-obligo",title:"Otto-Obligo / Zahlungsplan-Blick",detail:"Saldo vs. 500k-Limit, Fälligkeiten der Woche",cat:"fin",time:"10:30",days:[1,3,5],active:true,t},
+      {id:"seed-kreditoren",title:"Kreditoren: Fälligkeiten freigeben",detail:"Agicap-Abgleich, überfällige Posten",cat:"fin",time:"11:30",days:[2,4],active:true,t},
+      {id:"seed-re",title:"re@ Rechnungen (AMM) sichten",detail:"Frachtkosten-Mails zuordnen",cat:"log",time:"14:00",days:[1,2,3,4,5],active:true,t},
+      {id:"seed-abschluss",title:"Tagesabschluss: morgen planen",detail:"Offenes verschieben, Prioritäten setzen",cat:"allg",time:"16:30",days:[1,2,3,4,5],active:true,t}
     ],
     oneoffs:[],
     completions:{},
     links:[
-      {id:uid(),label:"Outlook Web",url:"https://outlook.office.com/mail/",icon:"✉️",t},
-      {id:uid(),label:"Kalender",url:"https://outlook.office.com/calendar/",icon:"📅",t},
-      {id:uid(),label:"Teams",url:"https://teams.microsoft.com",icon:"💬",t},
-      {id:uid(),label:"Odoo (URL eintragen)",url:"",icon:"🟣",t},
-      {id:uid(),label:"NH5 Dashboard (URL eintragen)",url:"",icon:"📦",t}
+      {id:"link-outlook",label:"Outlook Web",url:"https://outlook.office.com/mail/",icon:"✉️",t},
+      {id:"link-kalender",label:"Kalender",url:"https://outlook.office.com/calendar/",icon:"📅",t},
+      {id:"link-teams",label:"Teams",url:"https://teams.microsoft.com",icon:"💬",t},
+      {id:"link-odoo",label:"Odoo (URL eintragen)",url:"",icon:"🟣",t},
+      {id:"link-nh5",label:"NH5 Dashboard (URL eintragen)",url:"",icon:"📦",t}
     ],
     deleted:{},
     snaps:[]
@@ -953,8 +955,13 @@ async function pushRemote(attempt=0){
 }
 function schedulePush(){clearTimeout(syncTimer);syncTimer=setTimeout(()=>pushRemote(),800);}
 function scheduleSync(){if(sbCfg())schedulePush();}
+let lastHiddenPoll=0;
 async function pollOnce(){
-  if(syncBusy||!sbCfg()||document.hidden)return;
+  if(syncBusy||!sbCfg())return;
+  if(document.hidden){ // Hintergrund-Tab: gedrosselt auf 1×/Minute statt alle 8 s
+    if(ts()-lastHiddenPoll<60000)return;
+    lastHiddenPoll=ts();
+  }
   syncBusy=true;
   try{await pullRemote();setPill("sync","Synchronisiert");}
   catch(e){setPill("fehler","Sync-Fehler",`FEHLER: ${e.message}`);}
