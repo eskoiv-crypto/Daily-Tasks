@@ -93,6 +93,17 @@ header{max-width:680px;margin:0 auto;padding:calc(18px + env(safe-area-inset-top
 #quickAdd::placeholder{color:var(--muted)}
 #quickBtn{width:52px;border-radius:18px;border:none;background:var(--accent);color:#fff;font-size:26px;font-weight:400;cursor:pointer;box-shadow:0 6px 20px rgba(10,132,255,.4);transition:transform .15s}
 #quickBtn:active{transform:scale(.92)}
+/* --- Agenda (Termine heute) --- */
+#agendaWrap{margin-top:14px}
+#agendaCard{display:flex;gap:9px;overflow-x:auto;padding:12px 14px;border-radius:20px;background:var(--card);backdrop-filter:blur(24px) saturate(1.5);-webkit-backdrop-filter:blur(24px) saturate(1.5);border:1px solid var(--brd);box-shadow:var(--shadow);scrollbar-width:none}
+#agendaCard::-webkit-scrollbar{display:none}
+#agendaCard .agl{flex-shrink:0;align-self:center;font-size:16px;padding-right:2px}
+.ag{flex-shrink:0;display:flex;flex-direction:column;gap:2px;padding:8px 13px;border-radius:14px;background:var(--input)}
+.ag .at{font-size:12px;font-weight:800;color:var(--accent);font-variant-numeric:tabular-nums}
+.ag .an{font-size:12.5px;font-weight:600;max-width:190px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+.ag.past{opacity:.45}
+.trow .lnk{color:var(--accent);font-size:15px;padding:8px;border-radius:12px;min-width:34px;text-decoration:none;display:flex;align-items:center;justify-content:center}
+.trow .lnk:hover{background:var(--input)}
 /* --- Task-Listen --- */
 .tgroup{margin-top:16px}
 .tgroup>h3{font-size:13px;font-weight:700;letter-spacing:.6px;text-transform:uppercase;color:var(--muted);padding:0 6px 8px;display:flex;align-items:center;gap:8px}
@@ -232,6 +243,8 @@ dialog h3{font-size:19px;font-weight:750;letter-spacing:-.3px}
     </div>
     <div id="allDone">🎉 Alles erledigt — starker Tag!</div>
   </div>
+
+  <div id="agendaWrap"></div>
 
   <div id="quickRow">
     <input id="quickAdd" type="text" placeholder="+ Neue Aufgabe … z. B. „14:00 Odoo Lots prüfen“" autocomplete="off">
@@ -490,11 +503,20 @@ function rowHTML(it,done,over){
         <span class="catlbl"><span class="catdot" style="background:${c.c}"></span>${c.n}</span>
         ${it.kind==="tpl"?"<span>↻</span>":""}${it.detail?`<span>· ${esc(it.detail)}</span>`:""}</div>
     </div>
+    ${it.link?`<a class="lnk" href="${esc(it.link)}" target="_blank" rel="noopener" title="Original öffnen (z. B. Mail)">↗</a>`:""}
     <button class="edit" title="Bearbeiten">✎</button>
   </div>`;
 }
 function esc(s){return String(s||"").replace(/[&<>"']/g,m=>({"&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;","'":"&#39;"}[m]));}
+function renderAgenda(){
+  const w=$("#agendaWrap"), ag=state.agenda;
+  if(!ag||ag.date!==todayKey()||!ag.items||!ag.items.length){w.innerHTML="";return;}
+  const now=nowHM();
+  w.innerHTML=`<div id="agendaCard"><span class="agl">📅</span>${ag.items.map(i=>
+    `<div class="ag ${i.time&&i.time<now?"past":""}"><span class="at">${esc(i.time||"")}</span><span class="an">${esc(i.title)}</span></div>`).join("")}</div>`;
+}
 function renderHeute(){
+  renderAgenda();
   const dk=todayKey(), items=dueForDate(dk), now=nowHM();
   const withDone=items.map(it=>({it,done:isDone(dk,it.id),over:!!it.time&&it.time<now&&!isDone(dk,it.id)}));
   const sortT=(a,b)=>(a.it.time||"99")<(b.it.time||"99")?-1:1;
@@ -685,6 +707,7 @@ $("#quickAdd").addEventListener("keydown",e=>{if(e.key==="Enter")quickAdd();});
 
 /* ---------- Events (Delegation) ---------- */
 $("#taskArea").addEventListener("click",e=>{
+  if(e.target.closest(".lnk"))return; // Deeplink: Standardverhalten (neuer Tab)
   const row=e.target.closest(".trow");if(!row)return;
   const id=row.dataset.id,kind=row.dataset.kind;
   if(e.target.closest(".edit")){
@@ -868,11 +891,12 @@ function setPill(mode,txt,detail){
 function payloadHash(p){return JSON.stringify(p);}
 function buildPayload(){
   return {templates:state.templates,oneoffs:state.oneoffs,completions:state.completions,
-          links:state.links,deleted:state.deleted};
+          links:state.links,deleted:state.deleted,agenda:state.agenda||null};
 }
 function applyPayload(p){
   state.templates=p.templates||[];state.oneoffs=p.oneoffs||[];
   state.completions=p.completions||{};state.links=p.links||[];state.deleted=p.deleted||{};
+  state.agenda=p.agenda||null;
 }
 function mergeList(loc,rem,del){
   const map=new Map();
@@ -893,11 +917,13 @@ function mergePayload(loc,rem){
       comp[dk][id]=(!r||(l&&l.t>=r.t))?l:r;
     }
   }
+  const agL=loc.agenda,agR=rem.agenda;
+  const agenda=((agL&&agL.t||0)>=(agR&&agR.t||0))?(agL||agR||null):agR;
   return {
     templates:mergeList(loc.templates,rem.templates,del),
     oneoffs:mergeList(loc.oneoffs,rem.oneoffs,del),
     links:mergeList(loc.links,rem.links,del),
-    completions:comp,deleted:del
+    completions:comp,deleted:del,agenda
   };
 }
 async function sbFetch(qs,opts={}){
