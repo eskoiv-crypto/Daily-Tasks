@@ -199,8 +199,37 @@ html[data-theme=dark] pre{background:rgba(0,0,0,.5)}
 #dock button.on{background:var(--accent);color:#fff;box-shadow:0 6px 18px rgba(10,132,255,.4)}
 @media(max-width:430px){#dock button{width:53px;font-size:9.5px}}
 @media(max-width:350px){#dock button{width:46px}}
+@media(display-mode:standalone){#banner{top:max(54px, calc(env(safe-area-inset-top, 44px) + 6px))}}
+/* --- Mobil-Kompaktlayout --- */
+@media(max-width:520px){
+  header{padding-top:calc(10px + env(safe-area-inset-top))}
+  #greet h1{font-size:21px}
+  #greet p{font-size:12.5px}
+  #syncPill{padding:7px 11px;font-size:11.5px}
+  .card{padding:14px;border-radius:20px;margin-top:10px}
+  #hero{gap:14px}
+  #ringWrap{width:100px;height:100px}
+  #ringWrap svg{width:100%;height:100%}
+  #ringPct{font-size:22px}
+  #ringSub{font-size:10.5px}
+  #heroStats{gap:4px 14px}
+  .hstat .v{font-size:18px}
+  .hstat .l{font-size:10.5px}
+  #quickRow{margin-top:10px}
+  #quickAdd{padding:11px 14px;border-radius:15px}
+  #quickBtn{width:46px;border-radius:15px;font-size:22px}
+  .tgroup{margin-top:11px}
+  .tgroup>h3{padding-bottom:6px}
+  .trow{padding:10px 12px;margin-bottom:7px;border-radius:16px;gap:10px}
+  .trow .title{font-size:14px}
+  .trow .meta{font-size:11.5px;margin-top:2px}
+  .trow .chk{width:26px;height:26px;min-width:26px}
+  .fitem{padding:11px 13px;margin-bottom:7px}
+  #agendaCard{padding:9px 12px}
+  body{padding-bottom:calc(106px + env(safe-area-inset-bottom))}
+}
 /* --- Banner & Toast --- */
-#banner{position:fixed;top:calc(10px + env(safe-area-inset-top));left:50%;transform:translate(-50%,-130%);width:min(480px,calc(100vw - 24px));background:var(--card);backdrop-filter:blur(30px) saturate(1.8);-webkit-backdrop-filter:blur(30px) saturate(1.8);border:1px solid var(--brd);border-radius:22px;box-shadow:0 18px 50px rgba(0,0,0,.3);padding:15px 17px;z-index:100;transition:transform .45s cubic-bezier(.3,1.1,.4,1)}
+#banner{position:fixed;top:max(12px, env(safe-area-inset-top, 12px));left:50%;transform:translate(-50%,-130%);width:min(480px,calc(100vw - 24px));background:var(--card);backdrop-filter:blur(30px) saturate(1.8);-webkit-backdrop-filter:blur(30px) saturate(1.8);border:1px solid var(--brd);border-radius:22px;box-shadow:0 18px 50px rgba(0,0,0,.3);padding:15px 17px;z-index:100;transition:transform .45s cubic-bezier(.3,1.1,.4,1)}
 #banner.show{transform:translate(-50%,0)}
 #banner .bt{font-size:15px;font-weight:700;display:flex;align-items:center;gap:8px}
 #banner .bd{font-size:13px;color:var(--muted);margin-top:3px;font-weight:500}
@@ -257,6 +286,7 @@ dialog h3{font-size:19px;font-weight:750;letter-spacing:-.3px}
     <div id="allDone">🎉 Alles erledigt — starker Tag!</div>
   </div>
 
+  <div id="connectWrap"></div>
   <div id="agendaWrap"></div>
 
   <div id="quickRow">
@@ -338,6 +368,7 @@ dialog h3{font-size:19px;font-weight:750;letter-spacing:-.3px}
       <button class="btn" style="margin-top:8px;max-width:130px" onclick="genRoom()">Generieren</button></div>
     <div class="dlgActs">
       <button class="btn primary" onclick="connectSync()">Verbinden &amp; testen</button>
+      <button class="btn" onclick="pasteSetup()">📋 Aus Zwischenablage</button>
       <button class="btn" onclick="disconnectSync()">Trennen</button>
     </div>
     <div class="hint" id="syncDetail">Status: nicht konfiguriert.</div>
@@ -547,8 +578,24 @@ function renderAgenda(){
   w.innerHTML=`<div id="agendaCard"><span class="agl">📅</span>${ag.items.map(i=>
     `<div class="ag ${i.time&&i.time<now?"past":""}"><span class="at">${esc(i.time||"")}</span><span class="an">${esc(i.title)}</span></div>`).join("")}</div>`;
 }
+async function pasteSetup(){
+  try{
+    const txt=await navigator.clipboard.readText();
+    const m=txt.match(/\{[\s\S]*\}/);
+    const cfg=JSON.parse(m?m[0]:txt);
+    if(!cfg.url||!cfg.key||!cfg.room)throw new Error("url/key/room fehlen");
+    state.settings.sb={url:cfg.url.trim(),key:cfg.key.trim(),room:cfg.room.trim()};
+    save(false);renderSetup();
+    await connectSync();renderAll();
+  }catch(e){toast("Zwischenablage unlesbar — bitte manuell eintragen");go("setup");}
+}
 function renderHeute(){
   renderAgenda();
+  const w=$("#connectWrap");
+  if(w)w.innerHTML=sbCfg()?"":`<div class="card"><h2>📡 Sync nicht verbunden</h2>
+    <div class="hint" style="margin-top:0">Dieses Gerät zeigt nur lokale Daten. Schnellste Einrichtung: Zugangsdaten-Zeile kopieren (bekommst du von Claude/vom PC), dann:</div>
+    <button class="btn primary wide" onclick="pasteSetup()">📋 Einrichtung aus Zwischenablage übernehmen</button>
+    <button class="btn wide" onclick="go('setup')">Manuell im Setup eintragen</button></div>`;
   const dk=todayKey(), items=dueForDate(dk), now=nowHM();
   const withDone=items.map(it=>({it,done:isDone(dk,it.id),over:!!it.time&&it.time<now&&!isDone(dk,it.id)}));
   const sortT=(a,b)=>(a.it.time||"99")<(b.it.time||"99")?-1:1;
@@ -878,10 +925,14 @@ function tick(){
   // Tageswechsel
   if(todayKey()!==lastDay){lastDay=todayKey();reminded={};snoozes={};saveReminded();dailySnapshot();renderAll();}
   const dk=todayKey(),now=nowHM();
+  const nowMin=(t=>+t.slice(0,2)*60+ +t.slice(3))(now);
+  const minsLate=t=>nowMin-(+t.slice(0,2)*60+ +t.slice(3));
   for(const it of dueForDate(dk)){
     if(!it.time||isDone(dk,it.id)||reminded[it.id])continue;
     if(snoozes[it.id]&&ts()<snoozes[it.id])continue;
-    if(it.time<=now){
+    const late=minsLate(it.time);
+    if(late>60){reminded[it.id]=ts();continue;} // zu alt: bleibt rot in der Liste, kein Banner mehr
+    if(late>=0){
       reminded[it.id]=ts();saveReminded();
       beepRemind();
       notify("⏰ "+it.title,(it.time?it.time+" · ":"")+(it.detail||"Jetzt fällig"));
@@ -889,16 +940,20 @@ function tick(){
       break; // max. 1 Banner pro Tick
     }
   }
-  // Termin-Erinnerungen aus der Agenda
+  // Termin-Erinnerungen aus der Agenda (nur bis 15 min nach Beginn)
   if(state.agenda&&state.agenda.date===dk&&state.agenda.items){
     for(const ev of state.agenda.items){
       const key="ag:"+ev.time+":"+ev.title;
-      if(!ev.time||reminded[key]||ev.time>now)continue;
-      reminded[key]=ts();saveReminded();
-      beepRemind();
-      notify("📅 "+ev.title,ev.time+" Uhr — Termin beginnt");
-      showBanner("Termin: "+ev.title,ev.time+" Uhr",null);
-      break;
+      if(!ev.time||reminded[key])continue;
+      const late=minsLate(ev.time);
+      if(late>15){reminded[key]=ts();continue;}
+      if(late>=0){
+        reminded[key]=ts();saveReminded();
+        beepRemind();
+        notify("📅 "+ev.title,ev.time+" Uhr — Termin beginnt");
+        showBanner("Termin: "+ev.title,ev.time+" Uhr",null);
+        break;
+      }
     }
   }
   // Überfällig-Markierung aktuell halten
@@ -1118,7 +1173,7 @@ startPolling();
 if(sbCfg())pollOnce();
 setInterval(tick,30000);
 setInterval(renderHeader,60000);
-window.go=go;window.openEdit=openEdit;window.addLink=addLink;window.askNotif=askNotif;window.pillTap=pillTap;
+window.go=go;window.openEdit=openEdit;window.addLink=addLink;window.askNotif=askNotif;window.pillTap=pillTap;window.pasteSetup=pasteSetup;
 window.testReminder=testReminder;window.toggleSound=toggleSound;window.exportJSON=exportJSON;
 window.restoreSnap=restoreSnap;window.resetAll=resetAll;window.connectSync=connectSync;
 window.disconnectSync=disconnectSync;window.genRoom=genRoom;

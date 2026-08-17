@@ -1,7 +1,7 @@
 /* Daily Cockpit Service Worker — Offline-Fähigkeit.
    Strategie: Network-first mit Cache-Fallback (App bleibt aktuell,
    öffnet aber auch im Funkloch). Fremd-Origins (Supabase) unangetastet. */
-const CACHE = "cockpit-v1";
+const CACHE = "cockpit-v2";
 self.addEventListener("install", e => {
   self.skipWaiting();
   e.waitUntil(caches.open(CACHE).then(c => c.addAll(["./", "./index.html", "./manifest.json"])));
