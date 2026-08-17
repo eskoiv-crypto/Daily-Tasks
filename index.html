@@ -180,12 +180,25 @@ details.guide ol{margin:10px 0 4px 18px;font-size:13.5px;line-height:1.65;color:
 pre{background:rgba(0,0,0,.28);color:#d7f5e2;border-radius:12px;padding:12px;font-size:11.5px;overflow-x:auto;margin-top:8px;font-family:ui-monospace,Consolas,monospace;line-height:1.5}
 html[data-theme=dark] pre{background:rgba(0,0,0,.5)}
 .hint{font-size:12.5px;color:var(--muted);margin-top:10px;line-height:1.55}
+/* --- Feed --- */
+.fitem{display:flex;gap:12px;background:var(--card);backdrop-filter:blur(24px) saturate(1.5);-webkit-backdrop-filter:blur(24px) saturate(1.5);border:1px solid var(--brd);border-radius:20px;padding:14px 16px;margin-bottom:9px;box-shadow:var(--shadow);animation:up .4s both}
+.fitem .fic{font-size:19px;line-height:1.3}
+.fitem .fbody{flex:1;min-width:0}
+.fitem .ft{font-size:14.5px;font-weight:700;line-height:1.35}
+.fitem .fs{font-size:13px;color:var(--muted);margin-top:3px;line-height:1.5;font-weight:500}
+.fitem .fm{font-size:11.5px;color:var(--muted);margin-top:5px;font-weight:600;font-variant-numeric:tabular-nums;display:flex;gap:10px;align-items:center}
+.fitem .fm a{color:var(--accent);text-decoration:none;font-weight:700}
+.fday{font-size:13px;font-weight:700;letter-spacing:.6px;text-transform:uppercase;color:var(--muted);padding:14px 6px 8px}
+#hbChip{font-size:12px;font-weight:700;margin-left:6px}
+#hbChip.warn{color:var(--warn)}
+#hbChip.ok{color:var(--ok)}
 /* --- Dock --- */
 #dock{position:fixed;left:50%;transform:translateX(-50%);bottom:calc(14px + env(safe-area-inset-bottom));display:flex;gap:2px;background:var(--dock);backdrop-filter:blur(30px) saturate(1.8);-webkit-backdrop-filter:blur(30px) saturate(1.8);border:1px solid var(--brd);border-radius:26px;padding:7px;box-shadow:0 16px 44px rgba(0,0,0,.22);z-index:50}
 #dock button{border:none;background:transparent;color:var(--muted);width:66px;min-height:52px;border-radius:19px;cursor:pointer;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:3px;font-size:10.5px;font-weight:700;font-family:inherit;transition:all .2s}
 #dock button svg{width:22px;height:22px;fill:none;stroke:currentColor;stroke-width:1.9;stroke-linecap:round;stroke-linejoin:round}
 #dock button.on{background:var(--accent);color:#fff;box-shadow:0 6px 18px rgba(10,132,255,.4)}
-@media(max-width:420px){#dock button{width:58px}}
+@media(max-width:430px){#dock button{width:53px;font-size:9.5px}}
+@media(max-width:350px){#dock button{width:46px}}
 /* --- Banner & Toast --- */
 #banner{position:fixed;top:calc(10px + env(safe-area-inset-top));left:50%;transform:translate(-50%,-130%);width:min(480px,calc(100vw - 24px));background:var(--card);backdrop-filter:blur(30px) saturate(1.8);-webkit-backdrop-filter:blur(30px) saturate(1.8);border:1px solid var(--brd);border-radius:22px;box-shadow:0 18px 50px rgba(0,0,0,.3);padding:15px 17px;z-index:100;transition:transform .45s cubic-bezier(.3,1.1,.4,1)}
 #banner.show{transform:translate(-50%,0)}
@@ -216,7 +229,7 @@ dialog h3{font-size:19px;font-weight:750;letter-spacing:-.3px}
 
 <header>
   <div id="greet"><h1>…</h1><p>…</p></div>
-  <div id="syncPill" class="s-lokal" onclick="go('setup')"><span class="dot"></span><span id="syncTxt">Lokal</span></div>
+  <div id="syncPill" class="s-lokal" onclick="pillTap()" title="Antippen = sofort synchronisieren"><span class="dot"></span><span id="syncTxt">Lokal</span></div>
 </header>
 
 <main>
@@ -252,6 +265,11 @@ dialog h3{font-size:19px;font-weight:750;letter-spacing:-.3px}
   </div>
 
   <div id="taskArea"></div>
+</section>
+
+<!-- ================= FEED ================= -->
+<section id="view-feed" class="viewSec">
+  <div id="feedList"></div>
 </section>
 
 <!-- ================= WOCHE ================= -->
@@ -365,6 +383,7 @@ create policy "cockpit_rw" on daily_states
 <!-- Dock -->
 <nav id="dock">
   <button data-v="heute" class="on"><svg viewBox="0 0 24 24"><path d="M12 6v6l4 2"/><circle cx="12" cy="12" r="9"/></svg>Heute</button>
+  <button data-v="feed"><svg viewBox="0 0 24 24"><path d="M4 11a9 9 0 0 1 9 9M4 4a16 16 0 0 1 16 16"/><circle cx="5" cy="19" r="1.6"/></svg>Feed</button>
   <button data-v="woche"><svg viewBox="0 0 24 24"><path d="M4 19V10M10 19V4M16 19v-8M22 19H2"/></svg>Woche</button>
   <button data-v="aufgaben"><svg viewBox="0 0 24 24"><path d="M4 6h9M4 12h9M4 18h9M17 6l2 2 4-4"/><path d="M17 15l2 2 4-4"/></svg>Routinen</button>
   <button data-v="links"><svg viewBox="0 0 24 24"><path d="M10 14a5 5 0 0 0 7 0l3-3a5 5 0 0 0-7-7l-1.5 1.5"/><path d="M14 10a5 5 0 0 0-7 0l-3 3a5 5 0 0 0 7 7L12.5 19"/></svg>Links</button>
@@ -491,7 +510,20 @@ function renderHeader(){
   const h=new Date().getHours();
   const g=h<11?"Guten Morgen":h<17?"Guten Tag":"Guten Abend";
   $("#greet h1").textContent=g+", Dustin";
-  $("#greet p").textContent=new Date().toLocaleDateString("de-DE",{weekday:"long",day:"numeric",month:"long"});
+  let hbHtml="";
+  if(state.hb&&state.hb.t){
+    const mins=Math.round((ts()-state.hb.t)/60000);
+    const tstr=new Date(state.hb.t).toLocaleTimeString("de-DE",{hour:"2-digit",minute:"2-digit"});
+    const inWindow=h>=7&&h<20;
+    if(inWindow&&mins>40)hbHtml=`<span id="hbChip" class="warn">· ⚠️ Triage still seit ${tstr} — PC an?</span>`;
+    else hbHtml=`<span id="hbChip" class="ok">· Triage ${tstr} ✓</span>`;
+  }
+  $("#greet p").innerHTML=esc(new Date().toLocaleDateString("de-DE",{weekday:"long",day:"numeric",month:"long"}))+hbHtml;
+}
+function pillTap(){
+  if(!sbCfg()){go("setup");return;}
+  setPill("arbeit","Aktualisiere…");
+  pollOnce().then(()=>toast("Aktualisiert ✓"));
 }
 function rowHTML(it,done,over){
   const c=CATS[it.cat]||CATS.allg;
@@ -541,6 +573,30 @@ function renderHeute(){
   $("#stDone").textContent=dn;
   $("#stStreak").textContent="🔥 "+streak();
   $("#allDone").style.display=(total>0&&dn===total)?"block":"none";
+}
+/* ---------- Feed ---------- */
+const FEED_ICONS={mail:"✉️",info:"ℹ️",termin:"📅",system:"⚙️"};
+function renderFeed(){
+  const feed=(state.feed||[]).slice().sort((a,b)=>(b.t||0)-(a.t||0));
+  if(!feed.length){$("#feedList").innerHTML=`<div class="card empty">Noch keine Einträge.<br>Der Mail-Triage-Agent füllt den Feed automatisch mit Quintessenzen wichtiger Mails.</div>`;return;}
+  const today=todayKey();
+  const yd=new Date();yd.setDate(yd.getDate()-1);const yesterday=dateKey(yd);
+  let html="",lastDay="";
+  for(const f of feed){
+    const d=new Date(f.t||0),dk=dateKey(d);
+    if(dk!==lastDay){
+      lastDay=dk;
+      const lbl=dk===today?"Heute":dk===yesterday?"Gestern":d.toLocaleDateString("de-DE",{weekday:"short",day:"numeric",month:"numeric"});
+      html+=`<div class="fday">${lbl}</div>`;
+    }
+    const time=d.toLocaleTimeString("de-DE",{hour:"2-digit",minute:"2-digit"});
+    html+=`<div class="fitem"><div class="fic">${FEED_ICONS[f.kind]||"ℹ️"}</div>
+      <div class="fbody"><div class="ft">${esc(f.title)}</div>
+      ${f.summary?`<div class="fs">${esc(f.summary)}</div>`:""}
+      <div class="fm"><span>${time}</span>${f.link?`<a href="${esc(f.link)}" target="_blank" rel="noopener">Original öffnen ↗</a>`:""}</div>
+      </div></div>`;
+  }
+  $("#feedList").innerHTML=html;
 }
 /* ---------- Streak & Woche ---------- */
 function ratioForDate(dk){
@@ -752,6 +808,7 @@ function toggleSound(){state.settings.sound=!state.settings.sound;save(false);re
 function go(v){
   $$(".viewSec").forEach(s=>s.classList.toggle("on",s.id==="view-"+v));
   $$("#dock button").forEach(b=>b.classList.toggle("on",b.dataset.v===v));
+  if(v==="feed")renderFeed();
   if(v==="woche")renderWoche();
   if(v==="aufgaben")renderAufgaben();
   if(v==="links")renderLinks();
@@ -832,6 +889,18 @@ function tick(){
       break; // max. 1 Banner pro Tick
     }
   }
+  // Termin-Erinnerungen aus der Agenda
+  if(state.agenda&&state.agenda.date===dk&&state.agenda.items){
+    for(const ev of state.agenda.items){
+      const key="ag:"+ev.time+":"+ev.title;
+      if(!ev.time||reminded[key]||ev.time>now)continue;
+      reminded[key]=ts();saveReminded();
+      beepRemind();
+      notify("📅 "+ev.title,ev.time+" Uhr — Termin beginnt");
+      showBanner("Termin: "+ev.title,ev.time+" Uhr",null);
+      break;
+    }
+  }
   // Überfällig-Markierung aktuell halten
   if($("#view-heute").classList.contains("on"))renderHeute();
 }
@@ -891,12 +960,13 @@ function setPill(mode,txt,detail){
 function payloadHash(p){return JSON.stringify(p);}
 function buildPayload(){
   return {templates:state.templates,oneoffs:state.oneoffs,completions:state.completions,
-          links:state.links,deleted:state.deleted,agenda:state.agenda||null};
+          links:state.links,deleted:state.deleted,agenda:state.agenda||null,
+          feed:state.feed||[],hb:state.hb||null};
 }
 function applyPayload(p){
   state.templates=p.templates||[];state.oneoffs=p.oneoffs||[];
   state.completions=p.completions||{};state.links=p.links||[];state.deleted=p.deleted||{};
-  state.agenda=p.agenda||null;
+  state.agenda=p.agenda||null;state.feed=p.feed||[];state.hb=p.hb||null;
 }
 function mergeList(loc,rem,del){
   const map=new Map();
@@ -919,11 +989,16 @@ function mergePayload(loc,rem){
   }
   const agL=loc.agenda,agR=rem.agenda;
   const agenda=((agL&&agL.t||0)>=(agR&&agR.t||0))?(agL||agR||null):agR;
+  const hbL=loc.hb,hbR=rem.hb;
+  const hb=((hbL&&hbL.t||0)>=(hbR&&hbR.t||0))?(hbL||hbR||null):hbR;
+  const fmap=new Map();
+  for(const f of [...(loc.feed||[]),...(rem.feed||[])])if(f&&f.id&&!fmap.has(f.id))fmap.set(f.id,f);
+  const feed=[...fmap.values()].sort((a,b)=>(b.t||0)-(a.t||0)).slice(0,60);
   return {
     templates:mergeList(loc.templates,rem.templates,del),
     oneoffs:mergeList(loc.oneoffs,rem.oneoffs,del),
     links:mergeList(loc.links,rem.links,del),
-    completions:comp,deleted:del,agenda
+    completions:comp,deleted:del,agenda,feed,hb
   };
 }
 async function sbFetch(qs,opts={}){
@@ -1022,9 +1097,16 @@ document.addEventListener("visibilitychange",()=>{if(!document.hidden&&sbCfg())p
 
 /* ---------- Boot ---------- */
 function renderAll(){renderHeader();renderHeute();
+  if($("#view-feed").classList.contains("on"))renderFeed();
   if($("#view-woche").classList.contains("on"))renderWoche();
   if($("#view-aufgaben").classList.contains("on"))renderAufgaben();
   if($("#view-links").classList.contains("on"))renderLinks();
+}
+/* ---------- PWA (nur bei Hosting über http/https) ---------- */
+if(location.protocol==="https:"||location.protocol==="http:"){
+  const lm=document.createElement("link");lm.rel="manifest";lm.href="manifest.json";document.head.appendChild(lm);
+  const la=document.createElement("link");la.rel="apple-touch-icon";la.href="icon-180.png";document.head.appendChild(la);
+  if("serviceWorker" in navigator)navigator.serviceWorker.register("sw.js").catch(()=>{});
 }
 load();
 applyTheme();
@@ -1036,7 +1118,7 @@ startPolling();
 if(sbCfg())pollOnce();
 setInterval(tick,30000);
 setInterval(renderHeader,60000);
-window.go=go;window.openEdit=openEdit;window.addLink=addLink;window.askNotif=askNotif;
+window.go=go;window.openEdit=openEdit;window.addLink=addLink;window.askNotif=askNotif;window.pillTap=pillTap;
 window.testReminder=testReminder;window.toggleSound=toggleSound;window.exportJSON=exportJSON;
 window.restoreSnap=restoreSnap;window.resetAll=resetAll;window.connectSync=connectSync;
 window.disconnectSync=disconnectSync;window.genRoom=genRoom;
