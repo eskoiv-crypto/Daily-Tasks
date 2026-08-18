@@ -62,7 +62,13 @@ header{max-width:680px;margin:0 auto;padding:calc(18px + env(safe-area-inset-top
 #greet h1{font-size:28px;font-weight:700;letter-spacing:-.4px}
 #greet p{color:var(--muted);font-size:15px;margin-top:2px;font-weight:500}
 /* Sync-Pille */
-#syncPill{display:flex;align-items:center;gap:7px;padding:8px 14px;border-radius:100px;background:var(--card);backdrop-filter:blur(20px) saturate(1.5);-webkit-backdrop-filter:blur(20px) saturate(1.5);border:1px solid var(--brd);box-shadow:var(--shadow);font-size:12.5px;font-weight:600;cursor:pointer;white-space:nowrap;margin-top:4px}
+#pills{display:flex;flex-direction:column;align-items:flex-end;gap:6px;margin-top:4px;flex-shrink:0}
+#syncPill,#agentPill{display:flex;align-items:center;gap:7px;padding:8px 14px;border-radius:100px;background:var(--card);backdrop-filter:blur(20px) saturate(1.5);-webkit-backdrop-filter:blur(20px) saturate(1.5);border:1px solid var(--brd);box-shadow:var(--shadow);font-size:12.5px;font-weight:600;cursor:pointer;white-space:nowrap}
+#agentPill{font-size:11px;padding:5px 11px;cursor:default}
+#agentPill .dot{width:7px;height:7px;border-radius:50%}
+#agentPill.hb-ok .dot{background:var(--ok)}
+#agentPill.hb-warn .dot{background:var(--warn);animation:pulse 1s infinite}
+#agentPill.hb-warn{color:var(--warn)}
 #syncPill .dot{width:8px;height:8px;border-radius:50%;background:var(--muted)}
 #syncPill.s-lokal .dot{background:var(--muted)}
 #syncPill.s-sync .dot{background:var(--ok);box-shadow:0 0 8px var(--ok)}
@@ -111,7 +117,7 @@ header{max-width:680px;margin:0 auto;padding:calc(18px + env(safe-area-inset-top
 .tgroup.overdue>h3{color:var(--warn)}
 .trow{display:flex;align-items:center;gap:13px;background:var(--card);backdrop-filter:blur(24px) saturate(1.5);-webkit-backdrop-filter:blur(24px) saturate(1.5);border:1px solid var(--brd);border-radius:20px;padding:13px 15px;margin-bottom:9px;box-shadow:var(--shadow);cursor:pointer;transition:transform .18s,opacity .3s;animation:up .4s both}
 .trow:active{transform:scale(.985)}
-.trow.overdue{border-color:rgba(255,69,58,.35)}
+.trow.overdue{border-left:3px solid var(--warn)}
 .trow .chk{width:30px;height:30px;min-width:30px;border-radius:50%;border:2.2px solid var(--muted);display:flex;align-items:center;justify-content:center;transition:all .22s cubic-bezier(.3,1.4,.5,1);position:relative}
 .trow .chk svg{width:15px;height:15px;stroke:#fff;stroke-width:3.4;fill:none;stroke-linecap:round;stroke-linejoin:round;stroke-dasharray:22;stroke-dashoffset:22;transition:stroke-dashoffset .3s .05s}
 .trow.done .chk{background:var(--ok);border-color:var(--ok);transform:scale(1.05)}
@@ -202,35 +208,45 @@ html[data-theme=dark] pre{background:rgba(0,0,0,.5)}
 @media(display-mode:standalone){#banner{top:max(54px, calc(env(safe-area-inset-top, 44px) + 6px))}}
 /* --- Mobil-Kompaktlayout --- */
 @media(max-width:520px){
-  header{padding-top:calc(10px + env(safe-area-inset-top))}
-  #greet h1{font-size:21px}
-  #greet p{font-size:12.5px}
-  #syncPill{padding:7px 11px;font-size:11.5px}
-  .card{padding:14px;border-radius:20px;margin-top:10px}
-  #hero{gap:14px}
-  #ringWrap{width:100px;height:100px}
+  header{padding-top:calc(10px + env(safe-area-inset-top));align-items:center}
+  #greet h1{font-size:20px;letter-spacing:-.2px}
+  #greet p{font-size:12px}
+  #syncPill{padding:6px 11px;font-size:11px}
+  #agentPill{font-size:10px;padding:4px 9px}
+  .card{padding:13px;border-radius:19px;margin-top:9px}
+  #hero{gap:13px}
+  #ringWrap{width:88px;height:88px}
   #ringWrap svg{width:100%;height:100%}
-  #ringPct{font-size:22px}
-  #ringSub{font-size:10.5px}
-  #heroStats{gap:4px 14px}
-  .hstat .v{font-size:18px}
-  .hstat .l{font-size:10.5px}
-  #quickRow{margin-top:10px}
-  #quickAdd{padding:11px 14px;border-radius:15px}
-  #quickBtn{width:46px;border-radius:15px;font-size:22px}
-  .tgroup{margin-top:11px}
-  .tgroup>h3{padding-bottom:6px}
-  .trow{padding:10px 12px;margin-bottom:7px;border-radius:16px;gap:10px}
-  .trow .title{font-size:14px}
-  .trow .meta{font-size:11.5px;margin-top:2px}
-  .trow .chk{width:26px;height:26px;min-width:26px}
-  .fitem{padding:11px 13px;margin-bottom:7px}
-  #agendaCard{padding:9px 12px}
-  body{padding-bottom:calc(106px + env(safe-area-inset-bottom))}
+  #ringPct{font-size:20px}
+  #ringSub{font-size:10px}
+  #heroStats{gap:2px 12px}
+  .hstat .v{font-size:17px}
+  .hstat .l{font-size:10px;margin-top:0}
+  #quickRow{margin-top:9px;gap:8px}
+  #quickAdd{padding:10px 13px;border-radius:14px;font-size:16px}
+  #quickBtn{width:44px;border-radius:14px;font-size:21px}
+  .tgroup{margin-top:10px}
+  .tgroup>h3{padding-bottom:5px;font-size:12px}
+  .trow{padding:9px 11px;margin-bottom:6px;border-radius:15px;gap:9px}
+  .trow .title{font-size:13.5px;line-height:1.25}
+  .trow .meta{font-size:11px;margin-top:2px;display:block;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+  .trow .meta>*{display:inline}
+  .trow .catdot{display:inline-block}
+  .trow .chk{width:25px;height:25px;min-width:25px;border-width:2px}
+  .trow .edit{font-size:15px;min-width:30px;padding:6px}
+  .fitem{padding:10px 12px;margin-bottom:6px;border-radius:15px}
+  .fitem .ft{font-size:13.5px}
+  .fitem .fs{font-size:12px}
+  #agendaCard{padding:8px 11px;border-radius:16px}
+  .ag{padding:6px 10px}
+  #allDone{padding:9px 12px;font-size:13px;margin-top:10px}
+  #dock{padding:5px;border-radius:22px;bottom:calc(10px + env(safe-area-inset-bottom))}
+  #dock button{min-height:46px;border-radius:16px}
+  body{padding-bottom:calc(118px + env(safe-area-inset-bottom))}
 }
 /* --- Banner & Toast --- */
-#banner{position:fixed;top:max(12px, env(safe-area-inset-top, 12px));left:50%;transform:translate(-50%,-130%);width:min(480px,calc(100vw - 24px));background:var(--card);backdrop-filter:blur(30px) saturate(1.8);-webkit-backdrop-filter:blur(30px) saturate(1.8);border:1px solid var(--brd);border-radius:22px;box-shadow:0 18px 50px rgba(0,0,0,.3);padding:15px 17px;z-index:100;transition:transform .45s cubic-bezier(.3,1.1,.4,1)}
-#banner.show{transform:translate(-50%,0)}
+#banner{position:fixed;top:calc(12px + env(safe-area-inset-top, 0px));left:50%;transform:translate(-50%,calc(-100% - 120px));width:min(480px,calc(100vw - 24px));background:var(--card);backdrop-filter:blur(30px) saturate(1.8);-webkit-backdrop-filter:blur(30px) saturate(1.8);border:1px solid var(--brd);border-radius:22px;box-shadow:0 18px 50px rgba(0,0,0,.3);padding:15px 17px;z-index:100;opacity:0;visibility:hidden;pointer-events:none;transition:transform .45s cubic-bezier(.3,1.1,.4,1),opacity .3s ease,visibility 0s linear .45s}
+#banner.show{transform:translate(-50%,0);opacity:1;visibility:visible;pointer-events:auto;transition:transform .45s cubic-bezier(.3,1.1,.4,1),opacity .25s ease,visibility 0s}
 #banner .bt{font-size:15px;font-weight:700;display:flex;align-items:center;gap:8px}
 #banner .bd{font-size:13px;color:var(--muted);margin-top:3px;font-weight:500}
 #banner .acts{display:flex;gap:8px;margin-top:11px}
@@ -258,7 +274,10 @@ dialog h3{font-size:19px;font-weight:750;letter-spacing:-.3px}
 
 <header>
   <div id="greet"><h1>…</h1><p>…</p></div>
-  <div id="syncPill" class="s-lokal" onclick="pillTap()" title="Antippen = sofort synchronisieren"><span class="dot"></span><span id="syncTxt">Lokal</span></div>
+  <div id="pills">
+    <div id="syncPill" class="s-lokal" onclick="pillTap()" title="Antippen = sofort synchronisieren"><span class="dot"></span><span id="syncTxt">Lokal</span></div>
+    <div id="agentPill" style="display:none"><span class="dot"></span><span id="agentTxt"></span></div>
+  </div>
 </header>
 
 <main>
@@ -541,15 +560,19 @@ function renderHeader(){
   const h=new Date().getHours();
   const g=h<11?"Guten Morgen":h<17?"Guten Tag":"Guten Abend";
   $("#greet h1").textContent=g+", Dustin";
-  let hbHtml="";
+  $("#greet p").textContent=new Date().toLocaleDateString("de-DE",{weekday:"long",day:"numeric",month:"long"});
+  const ap=$("#agentPill");
   if(state.hb&&state.hb.t){
+    const hbD=new Date(state.hb.t);
     const mins=Math.round((ts()-state.hb.t)/60000);
-    const tstr=new Date(state.hb.t).toLocaleTimeString("de-DE",{hour:"2-digit",minute:"2-digit"});
-    const inWindow=h>=7&&h<20;
-    if(inWindow&&mins>40)hbHtml=`<span id="hbChip" class="warn">· ⚠️ Triage still seit ${tstr} — PC an?</span>`;
-    else hbHtml=`<span id="hbChip" class="ok">· Triage ${tstr} ✓</span>`;
-  }
-  $("#greet p").innerHTML=esc(new Date().toLocaleDateString("de-DE",{weekday:"long",day:"numeric",month:"long"}))+hbHtml;
+    const tstr=hbD.toLocaleTimeString("de-DE",{hour:"2-digit",minute:"2-digit"});
+    const dstr=dateKey(hbD)===todayKey()?"":" ("+hbD.toLocaleDateString("de-DE",{day:"numeric",month:"numeric"})+")";
+    const warn=(h>=7&&h<20)&&mins>40;
+    ap.style.display="flex";
+    ap.className=warn?"hb-warn":"hb-ok";
+    $("#agentTxt").textContent=warn?`Triage still seit ${tstr}${dstr}`:`Triage ${tstr}${dstr}`;
+    ap.title=warn?"Keine Agenten-Läufe — ist der PC an und die Claude-App offen?":"Mail-Triage aktiv";
+  }else ap.style.display="none";
 }
 function pillTap(){
   if(!sbCfg()){go("setup");return;}
