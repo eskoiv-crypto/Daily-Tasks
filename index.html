@@ -203,11 +203,11 @@ html[data-theme=dark] pre{background:rgba(0,0,0,.5)}
 #dock button{border:none;background:transparent;color:var(--muted);width:66px;min-height:52px;border-radius:19px;cursor:pointer;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:3px;font-size:10.5px;font-weight:700;font-family:inherit;transition:all .2s}
 #dock button svg{width:22px;height:22px;fill:none;stroke:currentColor;stroke-width:1.9;stroke-linecap:round;stroke-linejoin:round}
 #dock button.on{background:var(--accent);color:#fff;box-shadow:0 6px 18px rgba(10,132,255,.4)}
-@media(max-width:430px){#dock button{width:53px;font-size:9.5px}}
+@media(max-width:430px),(pointer:coarse){#dock button{width:53px;font-size:9.5px}}
 @media(max-width:350px){#dock button{width:46px}}
 @media(display-mode:standalone){#banner{top:max(54px, calc(env(safe-area-inset-top, 44px) + 6px))}}
 /* --- Mobil-Kompaktlayout --- */
-@media(max-width:520px){
+@media(max-width:520px),(pointer:coarse){
   header{padding-top:calc(10px + env(safe-area-inset-top));align-items:center}
   #greet h1{font-size:20px;letter-spacing:-.2px}
   #greet p{font-size:12px}
@@ -366,6 +366,7 @@ dialog h3{font-size:19px;font-weight:750;letter-spacing:-.3px}
       <div class="seg" id="themeSeg">
         <button data-v="auto">Auto</button><button data-v="light">Hell</button><button data-v="dark">Dunkel</button>
       </div></div>
+    <div class="set"><div><div class="l">Version</div><div class="d" id="verInfo">–</div></div></div>
   </div>
 
   <div class="card"><h2>Erinnerungen</h2>
@@ -481,6 +482,7 @@ create policy "cockpit_rw" on daily_states
    ohne Backend heißt der Status "Lokal", niemals "Synchronisiert".
    ============================================================ */
 "use strict";
+const APP_VERSION="1.0.0";
 const $=s=>document.querySelector(s), $$=s=>[...document.querySelectorAll(s)];
 const LS_KEY="dailyCockpit.v1", LS_REM="dailyCockpit.reminded";
 const uid=()=>Date.now().toString(36)+Math.random().toString(36).slice(2,8);
@@ -758,6 +760,7 @@ function renderSetup(){
   $("#sbUrl").value=state.settings.sb.url;$("#sbKey").value=state.settings.sb.key;$("#sbRoom").value=state.settings.sb.room;
   $("#notifState").textContent="Status: "+(typeof Notification==="undefined"?"nicht verfügbar":Notification.permission==="granted"?"aktiv ✅":Notification.permission==="denied"?"blockiert ❌ (Browser-Einstellungen)":"noch nicht erlaubt");
   $("#snapInfo").textContent=state.snaps.length?`${state.snaps.length} Tages-Snapshots (neuester: ${state.snaps[0].d})`:"noch keine Snapshots";
+  $("#verInfo").textContent=APP_VERSION+" · "+(location.protocol==="file:"?"lokale Datei":"gehostet (PWA, offline-fähig)");
 }
 /* ---------- Theme ---------- */
 function applyTheme(){
@@ -1184,7 +1187,15 @@ function renderAll(){renderHeader();renderHeute();
 if(location.protocol==="https:"||location.protocol==="http:"){
   const lm=document.createElement("link");lm.rel="manifest";lm.href="manifest.json";document.head.appendChild(lm);
   const la=document.createElement("link");la.rel="apple-touch-icon";la.href="icon-180.png";document.head.appendChild(la);
-  if("serviceWorker" in navigator)navigator.serviceWorker.register("sw.js").catch(()=>{});
+  if("serviceWorker" in navigator)navigator.serviceWorker.register("sw.js").then(reg=>{
+    reg.addEventListener("updatefound",()=>{
+      const nw=reg.installing;
+      if(nw)nw.addEventListener("statechange",()=>{
+        if(nw.state==="installed"&&navigator.serviceWorker.controller)
+          toast("🔄 Update geladen — einmal neu öffnen");
+      });
+    });
+  }).catch(()=>{});
 }
 load();
 applyTheme();
